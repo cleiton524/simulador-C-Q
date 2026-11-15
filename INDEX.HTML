@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador C.Q  versão 1.0 Pro — Calibrado + API Oficial</title>
+<style>
+:root{--bg:#07131f;--card:#0e2235;--card2:#132c44;--bd:#214363;--p:#209869;--p2:#55e69e;--txt:#e8f1ee;--mut:#8fb5c9;--warn:#ffca28}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:14px}
+.container{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 18px;margin-bottom:14px}
+header h1{margin:0;font-size:19px;display:flex;align-items:center;gap:8px;color:#fff}
+.badge{background:#12382b;color:var(--p2);border:1px solid var(--p);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:#16324d;color:#cfe;border:1px solid var(--bd);padding:8px 14px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer}
+nav button.active{background:var(--p);color:#fff;border-color:var(--p2)}
+.tab{display:none}
+.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:16px;color:var(--p2)}
+.alert{background:#1b2618;border-left:4px solid var(--warn);padding:10px 14px;border-radius:8px;font-size:13px;color:#f5eccd;margin-bottom:14px;line-height:1.45}
+.api-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.api-status{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:#888;display:inline-block}
+.dot.ok{background:#00e676;box-shadow:0 0 8px #00e676}
+.dot.load{background:#ffca28;box-shadow:0 0 8px #ffca28}
+.dot.err{background:#ff5252}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:12px}
+label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin-bottom:4px}
+input,select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--bd);background:#091826;color:#fff;font-size:14px}
+button.primary{background:var(--p);color:#fff;border:0;padding:11px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+button.secondary{background:#1d3f5e;color:#fff;border:1px solid var(--bd);padding:9px 14px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer}
+button:hover{filter:brightness(1.12)}
+.balls-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ball{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#38d399,#157a52);color:#fff;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 6px rgba(0,0,0,.4);border:2px solid #80f5c4}
+.ball.sm{width:32px;height:32px;font-size:13px}
+.game-item{background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.game-meta{font-size:12px;color:var(--mut)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.stat-box{background:var(--card2);border-left:3px solid var(--p);padding:10px 12px;border-radius:8px}
+.stat-box b{display:block;font-size:11px;color:var(--mut);margin-bottom:3px}
+.stat-box span{font-size:16px;font-weight:800;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left}
+th{color:var(--p2);background:#0b1b2b}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🔒 Mega-Sena C.Q V1.0 Pro <span class="badge">Calibrado 14,1 RPM · API Online</span></h1>
+    <nav>
+      <button class="active" onclick="openTab('gerador',this)">Gerador</button>
+      <button onclick="openTab('matematica',this)">Matemática</button>
+      <button onclick="openTab('fisica',this)">Física</button>
+      <button onclick="openTab('auditoria',this)">Auditoria</button>
+    </nav>
+  </header>
+
+  <div class="alert">
+    ⚠ Cada combinação simples de 6 dezenas tem exatamente a mesma chance matemática: <b>1 em 50.063.860</b>. Os filtros e a calibração física ajustam o perfil dos jogos gerados, sem alterar a probabilidade intrínseca do sorteio.
+  </div>
+
+  <!-- Barra de Sincronização API -->
+  <div class="api-bar">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--p2);margin-bottom:6px">
+        📡 Último Concurso Carregado: <span id="conc-num">3081</span> <span id="conc-data" style="color:var(--mut);font-weight:400"></span>
+      </div>
+      <div class="balls-row" id="last-balls"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <button class="secondary" onclick="sincronizarAPI()">🔄 Atualizar via API Oficial</button>
+      <div class="api-status"><span class="dot" id="api-dot"></span><span id="api-msg">Aguardando sincronização...</span></div>
+    </div>
+  </div>
+
+  <!-- ABA 1: GERADOR -->
+  <div id="tab-gerador" class="tab active">
+    <div class="card">
+      <h2>🎯 Filtros Estatísticos & Calibração para o Próximo Concurso</h2>
+      <div class="grid">
+        <div><label>Último concurso (6 dezenas)</label><input id="f-last" type="text" value="10 17 42 43 57 59" onchange="renderLastBalls()"></div>
+        <div><label>Soma mín.</label><input id="f-smin" type="number" value="130"></div>
+        <div><label>Soma máx.</label><input id="f-smax" type="number" value="230"></div>
+        <div><label>Amplitude mín.</label><input id="f-amin" type="number" value="25"></div>
+        <div><label>Amplitude máx.</label><input id="f-amax" type="number" value="55"></div>
+        <div>
+          <label>Paridade (pares)</label>
+          <select id="f-par">
+            <option value="2-4" selected>2 a 4 pares (Ideal)</option>
+            <option value="3">Exato 3P / 3Í</option>
+            <option value="any">Qualquer</option>
+          </select>
+        </div>
+        <div>
+          <label>Consecutivos</label>
+          <select id="f-cons">
+            <option value="0">Nenhum</option>
+            <option value="1" selected>Até 1 par</option>
+            <option value="any">Qualquer</option>
+          </select>
+        </div>
+        <div><label>Salto máx. (gap)</label><input id="f-gap" type="number" value="25"></div>
+        <div>
+          <label>Repetidas do último</label>
+          <select id="f-rep">
+            <option value="0-2" selected>0 a 2 repetidas</option>
+            <option value="0-1">Até 1 repetida</option>
+            <option value="0">Nenhuma</option>
+          </select>
+        </div>
+        <div>
+          <label>Viés de sorteio (API)</label>
+          <select id="f-bias">
+            <option value="uniform" selected>Uniforme (neutro)</option>
+            <option value="hot">Mais frequentes (histórico API)</option>
+            <option value="cold">Mais atrasadas (histórico API)</option>
+          </select>
+        </div>
+        <div><label>Qtd. jogos</label><input id="f-qtd" type="number" value="6" min="1" max="50"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="primary" onclick="gerarJogos()">🎰 Gerar 6 dezenas calibradas</button>
+        <button class="secondary" onclick="salvarTodos()">💾 Salvar no Histórico</button>
+        <button class="secondary" onclick="limparGerados()">🗑 Limpar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Palpites Gerados</h2>
+      <div id="games-out"><div style="color:var(--mut);font-size:13px">Clique em <b>Gerar 6 dezenas calibradas</b> para criar os jogos.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>📂 Histórico Salvo (LocalStorage)</h2>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <input id="manual-in" type="text" placeholder="Ex: 04 12 23 35 48 56" style="max-width:260px">
+        <button class="secondary" onclick="salvarManual()">➕ Salvar jogo manual</button>
+        <button class="secondary" onclick="limparHistorico()">🧹 Limpar histórico</button>
+      </div>
+      <div id="hist-out"></div>
+    </div>
+  </div>
+
+  <!-- ABA 2: MATEMÁTICA -->
+  <div id="tab-matematica" class="tab">
+    <div class="card">
+      <h2>🔺 Triângulo de Pascal e Combinatória</h2>
+      <p style="font-size:13px;color:var(--mut)">Total de combinações possíveis na Mega-Sena: <b>C(60,6) = 50.063.860</b>.</p>
+      <div class="grid">
+        <div><label>Dezenas na aposta (6 a 20)</label><input id="m-dez" type="number" value="6" min="6" max="20" oninput="calcMat()"></div>
+        <div><label>Preço base 6 dezenas (R$)</label><input id="m-preco" type="number" value="5.00" step="0.5" oninput="calcMat()"></div>
+      </div>
+      <div class="stat-grid" id="mat-stats"></div>
+      <div id="pascal-box" style="margin-top:14px;overflow-x:auto"></div>
+    </div>
+  </div>
+
+  <!-- ABA 3: FÍSICA DO GLOBO (CALIBRADA 14.1 RPM) -->
+  <div id="tab-fisica" class="tab">
+    <div class="card">
+      <h2>⚛ Física do Globo (Calibrada via Vídeo Oficial)</h2>
+      <p style="font-size:13px;color:var(--mut)">Parâmetros calibrados frame a frame a partir da transmissão oficial (1 revolução completa a cada <b>4,25 segundos</b> = <b>14,1 RPM</b> com 3 hastes a 120°).</p>
+      <div class="grid">
+        <div><label>Raio do globo (cm)</label><input id="p-raio" type="number" value="30" step="1"></div>
+        <div><label>Rotação calibrada (rpm)</label><input id="p-rpm" type="number" value="14.1" step="0.1"></div>
+        <div><label>Diâmetro da bola (mm)</label><input id="p-diam" type="number" value="50" step="1"></div>
+        <div><label>Massa de cada bola (g)</label><input id="p-massa" type="number" value="66" step="1"></div>
+        <div><label>Caminho livre médio (cm)</label><input id="p-clm" type="number" value="10" step="1"></div>
+        <div><label>Incerteza inicial (m)</label><input id="p-inc" type="text" value="1e-10"></div>
+        <div><label>Coef. de restituição e (0-1)</label><input id="p-rest" type="number" value="0.7" step="0.05"></div>
+      </div>
+      <button class="primary" onclick="calcFisica()">📐 Recalcular Parâmetros Físicos</button>
+      <div class="stat-grid" id="fis-stats" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- ABA 4: AUDITORIA -->
+  <div id="tab-auditoria" class="tab">
+    <div class="card">
+      <h2>🔬 Auditoria Estatística Real (Alimentada pela API)</h2>
+      <p style="font-size:13px;color:var(--mut)" id="aud-desc">Carregando histórico real de concursos para análise de frequência e atraso...</p>
+      <div class="stat-grid" id="aud-summary"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px">
+        <div>
+          <h3 style="font-size:14px;color:var(--p2);margin:0 0 6px">🔥 Top 10 Mais Frequentes</h3>
+          <table><thead><tr><th>Dezena</th><th>Saídas</th><th>%</th></tr></thead><tbody id="tbl-hot"></tbody></table>
+        </div>
+        <div>
+          <h3 style="font-size:14px;color:var(--warn);margin:0 0 6px">⏳ Top 10 Mais Atrasadas</h3>
+          <table><thead><tr><th>Dezena</th><th>Concursos em Atraso</th></tr></thead><tbody id="tbl-cold"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let historicoAPI = [];
+let freqMap = new Array(61).fill(0);
+let delayMap = new Array(61).fill(0);
+let generatedBuffer = [];
+
+function openTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function parseLast() {
+  return $('f-last').value.trim().split(/[\s,;-]+/).map(Number).filter(n => n >= 1 && n <= 60);
+}
+
+function renderLastBalls() {
+  const nums = parseLast();
+  $('last-balls').innerHTML = nums.map(n => `<div class="ball">${String(n).padStart(2, '0')}</div>`).join('');
+}
+
+// Integração com APIs Públicas de Loterias
+async function sincronizarAPI() {
+  const dot = $('api-dot');
+  const msg = $('api-msg');
+  dot.className = 'dot load';
+  msg.innerText = 'Consultando API oficial da Mega-Sena...';
+
+  const latestUrls = [
+    'https://loteriascaixa-api.herokuapp.com/api/megasena/latest',
+    'https://api.guidi.dev.br/loteria/megasena/ultimo'
+  ];
+
+  let latestOk = false;
+  for (const url of latestUrls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const conc = data.concurso || data.numero;
+      const dez = (data.dezenas || data.listaDezenas || []).map(Number).sort((a, b) => a - b);
+      const dt = data.data || data.dataApuracao || '';
+      if (conc && dez.length === 6) {
+        $('conc-num').innerText = conc;
+        $('conc-data').innerText = dt ? `(${dt})` : '';
+        $('f-last').value = dez.map(n => String(n).padStart(2, '0')).join(' ');
+        renderLastBalls();
+        latestOk = true;
+        break;
+      }
+    } catch (e) {}
+  }
+
+  // Buscar histórico completo para Auditoria e Viés
+  try {
+    const resAll = await fetch('https://loteriascaixa-api.herokuapp.com/api/megasena');
+    if (resAll.ok) {
+      const allData = await resAll.json();
+      if (Array.isArray(allData) && allData.length > 0) {
+        historicoAPI = allData;
+        processarAuditoria(allData);
+      }
+    }
+  } catch (e) {}
+
+  if (latestOk) {
+    dot.className = 'dot ok';
+    msg.innerText = `Sincronizado! Concurso ${$('conc-num').innerText} carregado.`;
+  } else {
+    dot.className = 'dot err';
+    msg.innerText = 'Sem conexão com API externa (usando concurso 3081 local).';
+  }
+}
+
+function processarAuditoria(lista) {
+  freqMap.fill(0);
+  delayMap.fill(0);
+  const lastSeen = new Array(61).fill(-1);
+  let somaGeral = 0, totalPares = 0;
+
+  // Ordenar crescente por concurso
+  const ordenado = lista.slice().sort((a, b) => (a.concurso || a.numero) - (b.concurso || b.numero));
+  const totalConc = ordenado.length;
+
+  ordenado.forEach((item, idx) => {
+    const dz = (item.dezenas || item.listaDezenas || []).map(Number);
+    dz.forEach(n => {
+      if (n >= 1 && n <= 60) {
+        freqMap[n]++;
+        lastSeen[n] = idx;
+        somaGeral += n;
+        if (n % 2 === 0) totalPares++;
+      }
+    });
+  });
+
+  for (let n = 1; n <= 60; n++) {
+    delayMap[n] = lastSeen[n] === -1 ? totalConc : (totalConc - 1 - lastSeen[n]);
+  }
+
+  $('aud-desc').innerText = `Base real analisada: ${totalConc} concursos oficiais carregados via API.`;
+  $('aud-summary').innerHTML = `
+    <div class="stat-box"><b>Concursos Analisados</b><span>${totalConc}</span></div>
+    <div class="stat-box"><b>Soma Média Histórica</b><span>${(somaGeral / totalConc).toFixed(1)}</span></div>
+    <div class="stat-box"><b>Média de Pares / Sorteio</b><span>${(totalPares / totalConc).toFixed(2)}</span></div>
+  `;
+
+  const arr = [];
+  for (let n = 1; n <= 60; n++) arr.push({ n, freq: freqMap[n], delay: delayMap[n] });
+
+  const hot = arr.slice().sort((a, b) => b.freq - a.freq).slice(0, 10);
+  $('tbl-hot').innerHTML = hot.map(x => `<tr><td><b>${String(x.n).padStart(2, '0')}</b></td><td>${x.freq}</td><td>${(100 * x.freq / totalConc).toFixed(1)}%</td></tr>`).join('');
+
+  const cold = arr.slice().sort((a, b) => b.delay - a.delay).slice(0, 10);
+  $('tbl-cold').innerHTML = cold.map(x => `<tr><td><b>${String(x.n).padStart(2, '0')}</b></td><td>${x.delay} concursos</td></tr>`).join('');
+}
+
+function drawWeightedSample(bias) {
+  const weights = [];
+  for (let n = 1; n <= 60; n++) {
+    let w = 1;
+    if (bias === 'hot' && historicoAPI.length) w = 1 + freqMap[n] / 25;
+    if (bias === 'cold' && historicoAPI.length) w = 1 + delayMap[n] / 8;
+    weights.push({ n, w });
+  }
+  const chosen = [];
+  while (chosen.length < 6) {
+    const sumW = weights.reduce((acc, x) => acc + x.w, 0);
+    let r = Math.random() * sumW;
+    for (let i = 0; i < weights.length; i++) {
+      r -= weights[i].w;
+      if (r <= 0) {
+        chosen.push(weights[i].n);
+        weights.splice(i, 1);
+        break;
+      }
+    }
+  }
+  return chosen.sort((a, b) => a - b);
+}
+
+function gerarJogos() {
+  const lastSet = new Set(parseLast());
+  const sMin = +$('f-smin').value || 21;
+  const sMax = +$('f-smax').value || 345;
+  const aMin = +$('f-amin').value || 5;
+  const aMax = +$('f-amax').value || 59;
+  const parRule = $('f-par').value;
+  const consRule = $('f-cons').value;
+  const maxGap = +$('f-gap').value || 59;
+  const repRule = $('f-rep').value;
+  const bias = $('f-bias').value;
+  const qtd = Math.min(50, Math.max(1, +$('f-qtd').value || 6));
+
+  const valid = [];
+  let tries = 0;
+
+  while (valid.length < qtd && tries < 60000) {
+    tries++;
+    const g = drawWeightedSample(bias);
+    const sum = g.reduce((a, b) => a + b, 0);
+    if (sum < sMin || sum > sMax) continue;
+
+    const amp = g[5] - g[0];
+    if (amp < aMin || amp > aMax) continue;
+
+    const pares = g.filter(n => n % 2 === 0).length;
+    if (parRule === '2-4' && (pares < 2 || pares > 4)) continue;
+    if (parRule === '3' && pares !== 3) continue;
+
+    let cons = 0, gapMax = 0;
+    for (let i = 1; i < 6; i++) {
+      const diff = g[i] - g[i - 1];
+      if (diff === 1) cons++;
+      if (diff > gapMax) gapMax = diff;
+    }
+    if (consRule === '0' && cons > 0) continue;
+    if (consRule === '1' && cons > 1) continue;
+    if (gapMax > maxGap) continue;
+
+    const rep = g.filter(n => lastSet.has(n)).length;
+    if (repRule === '0-2' && rep > 2) continue;
+    if (repRule === '0-1' && rep > 1) continue;
+    if (repRule === '0' && rep > 0) continue;
+
+    valid.push({ nums: g, sum, amp, pares, rep });
+  }
+
+  generatedBuffer = valid;
+  if (!valid.length) {
+    $('games-out').innerHTML = '<div style="color:#ff8a80">Nenhuma combinação encontrada com filtros tão restritos. Relaxe algum parâmetro.</div>';
+    return;
+  }
+
+  $('games-out').innerHTML = valid.map((item, idx) => `
+    <div class="game-item">
+      <div class="balls-row">
+        <span style="font-size:12px;color:var(--mut);width:54px">Jogo ${String(idx + 1).padStart(2, '0')}</span>
+        ${item.nums.map(n => `<div class="ball sm">${String(n).padStart(2, '0')}</div>`).join('')}
+      </div>
+      <div class="game-meta">Σ ${item.sum} · Amp ${item.amp} · ${item.pares}P/${6 - item.pares}Í · Rep ${item.rep}</div>
+    </div>
+  `).join('');
+}
+
+function limparGerados() {
+  generatedBuffer = [];
+  $('games-out').innerHTML = '<div style="color:var(--mut);font-size:13px">Lista limpa.</div>';
+}
+
+// Histórico LocalStorage
+function getHist() {
+  try { return JSON.parse(localStorage.getItem('le10_hist') || '[]'); } catch (e) { return []; }
+}
+function setHist(arr) {
+  localStorage.setItem('le10_hist', JSON.stringify(arr));
+  renderHist();
+}
+function salvarTodos() {
+  if (!generatedBuffer.length) return;
+  const h = getHist();
+  generatedBuffer.forEach(x => h.unshift({ nums: x.nums, date: new Date().toLocaleDateString('pt-BR') }));
+  setHist(h.slice(0, 100));
+}
+function salvarManual() {
+  const nums = $('manual-in').value.trim().split(/[\s,;-]+/).map(Number).filter(n => n >= 1 && n <= 60);
+  const uniq = Array.from(new Set(nums)).sort((a, b) => a - b);
+  if (uniq.length !== 6) { alert('Digite exatamente 6 dezenas válidas entre 01 e 60.'); return; }
+  const h = getHist();
+  h.unshift({ nums: uniq, date: new Date().toLocaleDateString('pt-BR') });
+  setHist(h.slice(0, 100));
+  $('manual-in').value = '';
+}
+function limparHistorico() {
+  localStorage.removeItem('le10_hist');
+  renderHist();
+}
+function renderHist() {
+  const h = getHist();
+  if (!h.length) {
+    $('hist-out').innerHTML = '<div style="color:var(--mut);font-size:12px">Nenhum jogo salvo ainda.</div>';
+    return;
+  }
+  $('hist-out').innerHTML = h.map((item, idx) => `
+    <div class="game-item">
+      <div class="balls-row">
+        ${item.nums.map(n => `<div class="ball sm">${String(n).padStart(2, '0')}</div>`).join('')}
+      </div>
+      <div class="game-meta">Salvo em ${item.date}</div>
+    </div>
+  `).join('');
+}
+
+// Matemática & Pascal
+function comb(n, k) {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  k = Math.min(k, n - k);
+  let res = 1;
+  for (let i = 1; i <= k; i++) res = res * (n - i + 1) / i;
+  return Math.round(res);
+}
+function calcMat() {
+  const d = Math.min(20, Math.max(6, +$('m-dez').value || 6));
+  const precoBase = +$('m-preco').value || 5;
+  const jogosEquiv = comb(d, 6);
+  const custo = jogosEquiv * precoBase;
+  const prob = Math.round(50063860 / jogosEquiv);
+
+  $('mat-stats').innerHTML = `
+    <div class="stat-box"><b>Apostas Simples Equivalentes</b><span>${jogosEquiv.toLocaleString('pt-BR')}</span></div>
+    <div class="stat-box"><b>Custo Estimado</b><span>R$ ${custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+    <div class="stat-box"><b>Probabilidade (Sena)</b><span>1 em ${prob.toLocaleString('pt-BR')}</span></div>
+  `;
+
+  let html = '<table><thead><tr><th>Linha (n)</th><th>Coeficientes Binomiais C(n, k)</th></tr></thead><tbody>';
+  for (let n = 0; n <= 10; n++) {
+    const row = [];
+    for (let k = 0; k <= n; k++) row.push(comb(n, k));
+    html += `<tr><td><b>n = ${n}</b></td><td>${row.join(' · ')}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  $('pascal-box').innerHTML = html;
+}
+
+// Física do Globo (Calibrada 14.1 RPM)
+function calcFisica() {
+  const R = (+$('p-raio').value || 30) / 100; // m
+  const rpm = +$('p-rpm').value || 14.1;
+  const diam = (+$('p-diam').value || 50) / 1000; // m
+  const massa = (+$('p-massa').value || 66) / 1000; // kg
+  const clm = (+$('p-clm').value || 10) / 100; // m
+  const inc0 = parseFloat($('p-inc').value) || 1e-10;
+  const e = +$('p-rest').value || 0.7;
+
+  const omega = rpm * 2 * Math.PI / 60; // rad/s
+  const vTip = omega * R; // m/s
+  const ac = omega * omega * R; // m/s²
+  const ec = 0.5 * massa * vTip * vTip * 1000; // mJ
+  const periodo = rpm > 0 ? (60 / rpm) : 0;
+  const colPorSeg = vTip / Math.max(0.01, clm);
+  // Divergência exponencial caótica (Lyapunov simplificado)
+  const tempoCaos = colPorSeg > 0 ? Math.log(diam / inc0) / (colPorSeg * Math.log(2 * R / diam)) : 0;
+
+  $('fis-stats').innerHTML = `
+    <div class="stat-box"><b>Velocidade Angular (ω)</b><span>${omega.toFixed(2)} rad/s (${(omega * 180 / Math.PI).toFixed(1)}°/s)</span></div>
+    <div class="stat-box"><b>Período por Revolução</b><span>${periodo.toFixed(2)} s / volta</span></div>
+    <div class="stat-box"><b>Velocidade Ponta da Pá</b><span>${vTip.toFixed(2)} m/s</span></div>
+    <div class="stat-box"><b>Aceleração Centrípeta</b><span>${ac.toFixed(2)} m/s² (${(ac / 9.81).toFixed(2)} G)</span></div>
+    <div class="stat-box"><b>Energia Cinética / Bola</b><span>${ec.toFixed(2)} mJ (e = ${e})</span></div>
+    <div class="stat-box"><b>Horizonte de Imprevisibilidade</b><span>~${Math.max(0.1, tempoCaos).toFixed(2)} s</span></div>
+  `;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderLastBalls();
+  renderHist();
+  calcMat();
+  calcFisica();
+  sincronizarAPI();
+});
+</script>
+</body>
+</html>
